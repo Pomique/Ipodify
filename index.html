@@ -1,516 +1,420 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black" />
-<title>iPodify</title>
-<style>
-  :root{
-    --shell-light:#f4f4f2;
-    --shell-shadow:#c9c9c6;
-    --shell-edge:#ffffff;
-    --wheel-face:#efeeec;
-    --wheel-shadow:#b9b8b5;
-    --screen-bezel:#0a0a0a;
-    --screen-glass:#dce4e6;
-    --ink:#20242a;
-    --ink-soft:#5b6169;
-    --accent:#3f4a52;
-    --btn-glyph:#4a4f55;
-    --spotify:#1DB954;
-  }
-  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{
-    height:100%; margin:0;
-    background:#111214;
-    font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;
-    overscroll-behavior:none;
-    display:flex; align-items:center; justify-content:center;
-  }
-  #app{
-    width:100%; max-width:380px; min-height:100dvh;
-    display:flex; align-items:center; justify-content:center;
-    padding:24px 18px;
-  }
-  .device{
-    width:100%;
-    max-width:340px;
-    background:linear-gradient(160deg,var(--shell-edge),var(--shell-light) 40%, var(--shell-shadow));
-    border-radius:34px;
-    padding:22px 22px 30px;
-    box-shadow:
-      0 1px 0 rgba(255,255,255,.9) inset,
-      0 -8px 20px rgba(0,0,0,.08) inset,
-      0 25px 50px rgba(0,0,0,.45),
-      0 2px 4px rgba(0,0,0,.2);
-    position:relative;
-  }
-  .device::after{
-    content:"";
-    position:absolute; inset:0;
-    border-radius:34px;
-    border:1px solid rgba(0,0,0,.06);
-    pointer-events:none;
-  }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>iPodify</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+    }
 
-  /* Screen */
-  .screen{
-    background:var(--screen-bezel);
-    border-radius:14px;
-    padding:9px;
-    box-shadow:0 2px 6px rgba(0,0,0,.5) inset, 0 1px 0 rgba(255,255,255,.4);
-    margin-bottom:26px;
-  }
-  .glass{
-    background:linear-gradient(165deg,#eef3f2,var(--screen-glass) 60%,#c7d0d1);
-    border-radius:6px;
-    min-height:190px;
-    display:flex; flex-direction:column;
-    overflow:hidden;
-    position:relative;
-  }
-  .statusbar{
-    display:flex; align-items:center; justify-content:space-between;
-    font-size:11px; font-weight:600; color:var(--ink);
-    padding:7px 10px 4px;
-    letter-spacing:.2px;
-  }
-  .statusbar .dot{width:5px;height:5px;border-radius:50%;background:var(--spotify);display:inline-block;margin-right:5px;}
-  .screen-body{flex:1; display:flex; flex-direction:column; padding:2px 12px 12px; min-height:0;}
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #1c1c1e;
+      color: #333;
+    }
 
-  /* --- Home / menu view --- */
-  .view{display:none; flex:1; flex-direction:column; min-height:0;}
-  .view.active{display:flex;}
+    /* Conteneur Plein Écran */
+    #app {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      background: linear-gradient(180deg, #3a3d40 0%, #181a1b 100%);
+      padding: env(safe-area-inset-top, 20px) 16px env(safe-area-inset-bottom, 20px) 16px;
+    }
 
-  .menu-title{font-size:13px; font-weight:700; color:var(--ink); text-align:center; margin-bottom:8px;}
-  .menu-item{
-    font-size:12.5px; color:var(--ink); padding:8px 4px; border-bottom:1px solid rgba(0,0,0,.08);
-    display:flex; align-items:center; justify-content:space-between;
-  }
-  .menu-item:last-child{border-bottom:none;}
-  .menu-item small{color:var(--ink-soft); font-weight:400;}
+    /* --- ÉCRAN IPOD --- */
+    .screen-container {
+      width: 100%;
+      max-width: 360px;
+      flex: 1;
+      max-height: 48%;
+      background: #c3d3c0; /* Teinte LCD monochrome classique */
+      border: 4px solid #2d3032;
+      border-radius: 12px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.3), 0 4px 10px rgba(0,0,0,0.5);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      margin-top: 10px;
+    }
 
-  .url-input{
-    width:100%; font-size:12px; padding:7px 8px; border-radius:5px;
-    border:1px solid #9aa3a3; background:#fff; color:var(--ink); margin-top:6px;
-  }
-  .go-btn{
-    margin-top:8px; font-size:12px; font-weight:700; color:#fff;
-    background:var(--accent); border:none; border-radius:5px; padding:7px;
-    width:100%;
-  }
-  .hint{font-size:10.5px; color:var(--ink-soft); margin-top:8px; line-height:1.4;}
-  .connect-btn{
-    margin-top:auto; font-size:12.5px; font-weight:700; color:#fff;
-    background:var(--spotify); border:none; border-radius:6px; padding:9px;
-  }
-  .status-msg{font-size:11px; color:var(--ink-soft); text-align:center; margin-top:8px; min-height:14px;}
+    /* En-tête Écran */
+    .screen-header {
+      height: 26px;
+      background: linear-gradient(180deg, #a8bba4 0%, #8f9e8b 100%);
+      border-bottom: 1px solid #7a8877;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #1a2219;
+    }
 
-  /* --- Now playing view --- */
-  .np-art{
-    width:92px; height:92px; border-radius:4px; margin:2px auto 8px;
-    background:#4a4f55 center/cover no-repeat;
-    box-shadow:0 3px 8px rgba(0,0,0,.25);
-    flex-shrink:0;
-  }
-  .np-title{font-size:12.5px; font-weight:700; color:var(--ink); text-align:center;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 4px;}
-  .np-artist{font-size:11px; color:var(--ink-soft); text-align:center; margin-top:1px;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .np-progress{
-    height:3px; background:rgba(0,0,0,.15); border-radius:2px; margin:10px 4px 2px; overflow:hidden;
-  }
-  .np-progress-fill{height:100%; width:0%; background:var(--ink); transition:width .3s linear;}
-  .np-times{display:flex; justify-content:space-between; font-size:9px; color:var(--ink-soft); padding:0 4px;}
-  .np-playlist{font-size:10px; color:var(--ink-soft); text-align:center; margin-top:auto; padding-top:6px;}
+    .settings-btn {
+      background: none;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+    }
 
-  /* Click wheel */
-  .wheel-wrap{display:flex; justify-content:center; margin-top:4px;}
-  .wheel{
-    position:relative; width:210px; height:210px; border-radius:50%;
-    background:radial-gradient(circle at 35% 30%, #fbfbfa, var(--wheel-face) 55%, var(--wheel-shadow) 100%);
-    box-shadow:0 4px 10px rgba(0,0,0,.25) inset, 0 2px 3px rgba(255,255,255,.7), 0 6px 14px rgba(0,0,0,.3);
-    touch-action:none;
-  }
-  .wheel-btn{
-    position:absolute; background:none; border:none; color:var(--btn-glyph);
-    font-size:11px; font-weight:600; letter-spacing:.5px;
-    display:flex; align-items:center; justify-content:center;
-    width:64px; height:44px; cursor:pointer;
-  }
-  .wheel-btn:active{color:#000;}
-  .wb-menu{top:8px; left:50%; transform:translateX(-50%);}
-  .wb-prev{left:2px; top:50%; transform:translateY(-50%); flex-direction:column;}
-  .wb-next{right:2px; top:50%; transform:translateY(-50%); flex-direction:column;}
-  .wb-play{bottom:8px; left:50%; transform:translateX(-50%);}
-  .wb-prev svg, .wb-next svg, .wb-play svg{width:14px; height:14px; fill:var(--btn-glyph);}
+    /* Corps Écran */
+    .screen-body {
+      flex: 1;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+    }
 
-  .center-btn{
-    position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
-    width:82px; height:82px; border-radius:50%;
-    background:linear-gradient(160deg,#fdfdfd,#e5e4e1);
-    box-shadow:0 2px 4px rgba(0,0,0,.15), 0 1px 0 rgba(255,255,255,.9) inset;
-    border:none; color:var(--ink-soft); font-size:10px; font-weight:600;
-  }
-  .center-btn:active{background:linear-gradient(160deg,#e5e4e1,#d7d6d3);}
+    /* CARROUSEL / MARQUEE POUR TITRE TROP LONG */
+    .marquee-container {
+      width: 100%;
+      overflow: hidden;
+      white-space: nowrap;
+      position: relative;
+      margin-bottom: 2px;
+    }
 
-  .brand{text-align:center; margin-top:22px; font-size:11px; letter-spacing:1px; color:#7a7d82; font-weight:600;}
-</style>
+    .marquee-text {
+      display: inline-block;
+      font-size: 16px;
+      font-weight: bold;
+      color: #111;
+      padding-left: 0%;
+      animation: marquee 10s linear infinite;
+    }
+
+    @keyframes marquee {
+      0% { transform: translateX(0%); }
+      15% { transform: translateX(0%); }
+      85% { transform: translateX(-50%); }
+      100% { transform: translateX(-50%); }
+    }
+
+    .artist-name {
+      font-size: 13px;
+      color: #333;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    /* Milieu Écran: Pochette & Icône Molette */
+    .now-playing-center {
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      flex: 1;
+      margin: 5px 0;
+    }
+
+    .album-art {
+      width: 80px;
+      height: 80px;
+      background: #9fae9c;
+      border: 1px solid #6c7969;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #444;
+      text-align: center;
+      object-fit: cover;
+    }
+
+    .screen-wheel-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid #6c7969;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: #555;
+      background: rgba(0,0,0,0.05);
+    }
+
+    /* Barre de Progression */
+    .progress-container {
+      width: 100%;
+      margin-top: 6px;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 10px;
+      background: #a1b29f;
+      border: 1px solid #6c7969;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      width: 35%;
+      height: 100%;
+      background: #2a3528;
+    }
+
+    .time-stamps {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #222;
+      margin-top: 2px;
+    }
+
+    /* --- MOLETTE CLICK WHEEL --- */
+    .wheel-container {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      max-height: 48%;
+      padding: 10px 0;
+    }
+
+    .click-wheel {
+      width: 250px;
+      height: 250px;
+      background: #2c2c2e;
+      border-radius: 50%;
+      position: relative;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.6), inset 0 2px 5px rgba(255,255,255,0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .wheel-btn {
+      position: absolute;
+      color: #a5a5a7;
+      font-size: 13px;
+      font-weight: bold;
+      background: none;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-menu { top: 18px; }
+    .btn-prev { left: 18px; }
+    .btn-next { right: 18px; }
+    .btn-play { bottom: 18px; }
+
+    .center-button {
+      width: 85px;
+      height: 85px;
+      background: #1c1c1e;
+      border-radius: 50%;
+      box-shadow: inset 0 2px 5px rgba(0,0,0,0.8), 0 1px 2px rgba(255,255,255,0.1);
+      border: none;
+      cursor: pointer;
+    }
+
+    /* --- FENÊTRE RÉGLAGES (6 PLAYLISTS) --- */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.8);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .modal-content {
+      background: #f2f2f7;
+      width: 100%;
+      max-width: 340px;
+      padding: 20px;
+      border-radius: 14px;
+      box-sizing: border-box;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-content h3 {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+
+    .playlist-input {
+      width: 100%;
+      padding: 8px 10px;
+      margin: 5px 0;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 13px;
+      box-sizing: border-box;
+    }
+
+    .btn-save-modal {
+      width: 100%;
+      padding: 10px;
+      background-color: #1ed760;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-top: 12px;
+      cursor: pointer;
+    }
+
+    .btn-close-modal {
+      width: 100%;
+      padding: 8px;
+      background-color: #8e8e93;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      margin-top: 6px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
-<div id="app">
-  <div class="device">
 
-    <div class="screen">
-      <div class="glass">
-        <div class="statusbar">
-          <span><span class="dot"></span>iPodify</span>
-          <span id="clock">--:--</span>
+  <div id="app">
+    <!-- Écran LCD iPod -->
+    <div class="screen-container">
+      <div class="screen-header">
+        <span>Lecteur</span>
+        <button class="settings-btn" onclick="openSettings()">⚙️</button>
+      </div>
+
+      <div class="screen-body">
+        <!-- Défilement Carrousel / Marquee pour le Titre -->
+        <div class="marquee-container">
+          <div class="marquee-text" id="track-title">
+            Bohemian Rhapsody - Remastered 2011 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Bohemian Rhapsody - Remastered 2011
+          </div>
         </div>
-        <div class="screen-body">
 
-          <!-- MENU / CONNECT VIEW -->
-          <div class="view active" id="view-menu">
-            <div class="menu-title">Menu</div>
-            <div id="menu-content" style="flex:1; display:flex; flex-direction:column; min-height:0;">
-              <!-- filled by JS -->
-            </div>
+        <div class="artist-name" id="artist-name">Queen</div>
+
+        <div class="now-playing-center">
+          <div class="album-art" id="album-art">Pochette</div>
+          <div class="screen-wheel-icon">MENU</div>
+        </div>
+
+        <div class="progress-container">
+          <div class="progress-bar-bg">
+            <div class="progress-fill" id="progress-fill"></div>
           </div>
-
-          <!-- NOW PLAYING VIEW -->
-          <div class="view" id="view-player">
-            <div class="np-art" id="np-art"></div>
-            <div class="np-title" id="np-title">—</div>
-            <div class="np-artist" id="np-artist">—</div>
-            <div class="np-progress"><div class="np-progress-fill" id="np-fill"></div></div>
-            <div class="np-times"><span id="np-elapsed">0:00</span><span id="np-duration">0:00</span></div>
-            <div class="np-playlist" id="np-status">Connexion...</div>
+          <div class="time-stamps">
+            <span id="time-current">1:34</span>
+            <span id="time-remaining">-2:21</span>
           </div>
-
         </div>
       </div>
     </div>
 
-    <!-- CLICK WHEEL -->
-    <div class="wheel-wrap">
-      <div class="wheel" id="wheel">
-        <button class="wheel-btn wb-menu" id="btn-menu">MENU</button>
-        <button class="wheel-btn wb-prev" id="btn-prev">
-          <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/></svg>
-        </button>
-        <button class="wheel-btn wb-next" id="btn-next">
-          <svg viewBox="0 0 24 24"><path d="M16 6h2v12h-2zM6 6l8.5 6L6 18z"/></svg>
-        </button>
-        <button class="wheel-btn wb-play" id="btn-play">
-          <svg id="play-icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        </button>
-        <button class="center-btn" id="btn-select">SELECT</button>
+    <!-- Click Wheel iPod -->
+    <div class="wheel-container">
+      <div class="click-wheel">
+        <button class="wheel-btn btn-menu" onclick="handleControl('MENU')">MENU</button>
+        <button class="wheel-btn btn-prev" onclick="handleControl('PREV')">⏮</button>
+        <button class="wheel-btn btn-next" onclick="handleControl('NEXT')">⏭</button>
+        <button class="wheel-btn btn-play" onclick="handleControl('PLAY')">►❚❚</button>
+        <button class="center-button" onclick="handleControl('SELECT')"></button>
       </div>
     </div>
-
-    <div class="brand">iPodify</div>
   </div>
-</div>
 
-<script>
-/* =========================================================
-   CONFIGURATION — à remplir avant de déployer
-   ========================================================= */
-const CLIENT_ID = "c4babe4992884628b766f199b1569747";
-const REDIRECT_URI = window.location.origin + window.location.pathname;
-const SCOPES = [
-  "user-read-playback-state",
-  "user-modify-playback-state",
-  "user-read-currently-playing",
-  "playlist-read-private",
-  "playlist-read-collaborative"
-].join(" ");
+  <!-- Modal Réglages 6 Playlists -->
+  <div class="modal" id="settings-modal">
+    <div class="modal-content">
+      <h3>⚙️ Mes 6 Playlists</h3>
+      <input type="text" id="p1" class="playlist-input" placeholder="Lien / ID Playlist 1">
+      <input type="text" id="p2" class="playlist-input" placeholder="Lien / ID Playlist 2">
+      <input type="text" id="p3" class="playlist-input" placeholder="Lien / ID Playlist 3">
+      <input type="text" id="p4" class="playlist-input" placeholder="Lien / ID Playlist 4">
+      <input type="text" id="p5" class="playlist-input" placeholder="Lien / ID Playlist 5">
+      <input type="text" id="p6" class="playlist-input" placeholder="Lien / ID Playlist 6">
 
-/* =========================================================
-   PKCE helpers
-   ========================================================= */
-function randomString(len){
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let out = "";
-  const arr = new Uint8Array(len);
-  crypto.getRandomValues(arr);
-  for (let i=0;i<len;i++) out += chars[arr[i] % chars.length];
-  return out;
-}
-async function sha256base64url(input){
-  const data = new TextEncoder().encode(input);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  let str = "";
-  const bytes = new Uint8Array(digest);
-  for (let b of bytes) str += String.fromCharCode(b);
-  return btoa(str).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
-}
+      <button class="btn-save-modal" onclick="sauvegarderPlaylists()">Sauvegarder</button>
+      <button class="btn-close-modal" onclick="closeSettings()">Fermer</button>
+    </div>
+  </div>
 
-/* =========================================================
-   Auth state
-   ========================================================= */
-function saveTokens(t){
-  const expiry = Date.now() + (t.expires_in*1000) - 10000;
-  localStorage.setItem("ipodify_access", t.access_token);
-  if (t.refresh_token) localStorage.setItem("ipodify_refresh", t.refresh_token);
-  localStorage.setItem("ipodify_expiry", String(expiry));
-}
-function getAccessToken(){ return localStorage.getItem("ipodify_access"); }
-function getRefreshToken(){ return localStorage.getItem("ipodify_refresh"); }
-function tokenExpired(){
-  const exp = parseInt(localStorage.getItem("ipodify_expiry")||"0",10);
-  return Date.now() > exp;
-}
+  <script>
+    window.onload = function() {
+      chargerPlaylists();
+    };
 
-async function startLogin(){
-  const verifier = randomString(64);
-  sessionStorage.setItem("ipodify_verifier", verifier);
-  const challenge = await sha256base64url(verifier);
-  const params = new URLSearchParams({
-    client_id: CLIENT_ID,
-    response_type: "code",
-    redirect_uri: REDIRECT_URI,
-    scope: SCOPES,
-    code_challenge_method: "S256",
-    code_challenge: challenge
-  });
-  window.location.href = "https://accounts.spotify.com/authorize?" + params.toString();
-}
-
-async function exchangeCodeForToken(code){
-  const verifier = sessionStorage.getItem("ipodify_verifier");
-  const body = new URLSearchParams({
-    client_id: CLIENT_ID,
-    grant_type: "authorization_code",
-    code, redirect_uri: REDIRECT_URI,
-    code_verifier: verifier
-  });
-  const res = await fetch("https://accounts.spotify.com/api/token", {
-    method:"POST",
-    headers:{"Content-Type":"application/x-www-form-urlencoded"},
-    body
-  });
-  if (!res.ok) throw new Error("token exchange failed");
-  const t = await res.json();
-  saveTokens(t);
-}
-
-async function refreshAccessToken(){
-  const refresh_token = getRefreshToken();
-  if (!refresh_token) return false;
-  const body = new URLSearchParams({
-    client_id: CLIENT_ID,
-    grant_type: "refresh_token",
-    refresh_token
-  });
-  const res = await fetch("https://accounts.spotify.com/api/token", {
-    method:"POST",
-    headers:{"Content-Type":"application/x-www-form-urlencoded"},
-    body
-  });
-  if (!res.ok) return false;
-  const t = await res.json();
-  saveTokens(t);
-  return true;
-}
-
-async function apiFetch(path, opts={}){
-  if (tokenExpired()) await refreshAccessToken();
-  const res = await fetch("https://api.spotify.com/v1"+path, {
-    ...opts,
-    headers:{
-      "Authorization":"Bearer "+getAccessToken(),
-      "Content-Type":"application/json",
-      ...(opts.headers||{})
+    function openSettings() {
+      document.getElementById('settings-modal').style.display = 'flex';
     }
-  });
-  if (res.status === 401){
-    const ok = await refreshAccessToken();
-    if (ok){
-      return fetch("https://api.spotify.com/v1"+path, {
-        ...opts,
-        headers:{"Authorization":"Bearer "+getAccessToken(),"Content-Type":"application/json",...(opts.headers||{})}
-      });
+
+    function closeSettings() {
+      document.getElementById('settings-modal').style.display = 'none';
     }
-  }
-  return res;
-}
 
-/* =========================================================
-   UI plumbing
-   ========================================================= */
-const viewMenu = document.getElementById("view-menu");
-const viewPlayer = document.getElementById("view-player");
-const menuContent = document.getElementById("menu-content");
-function showView(v){
-  viewMenu.classList.remove("active");
-  viewPlayer.classList.remove("active");
-  v.classList.add("active");
-}
-
-function renderConnectScreen(){
-  menuContent.innerHTML = `
-    <div class="hint">Connecte ton compte Spotify pour piloter la lecture depuis cette appli.</div>
-    <button class="connect-btn" id="connect-btn">Se connecter à Spotify</button>
-    <div class="status-msg" id="status-msg"></div>
-  `;
-  document.getElementById("connect-btn").addEventListener("click", startLogin);
-}
-
-function renderPlaylistScreen(){
-  menuContent.innerHTML = `
-    <div class="hint">Colle le lien d'une playlist Spotify :</div>
-    <input class="url-input" id="playlist-url" placeholder="https://open.spotify.com/playlist/..." />
-    <button class="go-btn" id="go-btn">Lancer la lecture</button>
-    <div class="status-msg" id="status-msg"></div>
-  `;
-  document.getElementById("go-btn").addEventListener("click", onLaunchPlaylist);
-}
-
-function extractPlaylistId(url){
-  const m = url.match(/playlist[\/:]([a-zA-Z0-9]+)/);
-  return m ? m[1] : null;
-}
-
-async function onLaunchPlaylist(){
-  const statusEl = document.getElementById("status-msg");
-  const url = document.getElementById("playlist-url").value.trim();
-  const id = extractPlaylistId(url);
-  if (!id){
-    statusEl.textContent = "Lien de playlist invalide.";
-    return;
-  }
-  statusEl.textContent = "Recherche d'un appareil actif...";
-  try{
-    const devicesRes = await apiFetch("/me/player/devices");
-    const devicesJson = await devicesRes.json();
-    const devices = devicesJson.devices || [];
-    if (devices.length === 0){
-      statusEl.textContent = "Ouvre l'appli Spotify une fois sur ce téléphone, puis réessaie.";
-      return;
+    // Charger les playlists sauvegardées sur l'appareil
+    function chargerPlaylists() {
+      const sauvegardes = JSON.parse(localStorage.getItem('ipodify_playlists'));
+      if (sauvegardes) {
+        for (let i = 0; i < 6; i++) {
+          if (sauvegardes[i]) {
+            document.getElementById(`p${i + 1}`).value = sauvegardes[i];
+          }
+        }
+      }
     }
-    const device = devices.find(d=>d.is_active) || devices[0];
-    const playRes = await apiFetch("/me/player/play?device_id="+device.id, {
-      method:"PUT",
-      body: JSON.stringify({ context_uri: "spotify:playlist:"+id })
-    });
-    if (playRes.status === 204 || playRes.ok){
-      localStorage.setItem("ipodify_last_playlist", id);
-      showView(viewPlayer);
-      startPolling();
-    } else {
-      statusEl.textContent = "Impossible de lancer la lecture (Premium requis).";
+
+    // Sauvegarder les 6 playlists sur le téléphone
+    function sauvegarderPlaylists() {
+      const mesPlaylists = [
+        document.getElementById('p1').value,
+        document.getElementById('p2').value,
+        document.getElementById('p3').value,
+        document.getElementById('p4').value,
+        document.getElementById('p5').value,
+        document.getElementById('p6').value
+      ];
+
+      localStorage.setItem('ipodify_playlists', JSON.stringify(mesPlaylists));
+      alert('Playlists enregistrées sur ton téléphone !');
+      closeSettings();
     }
-  } catch(e){
-    statusEl.textContent = "Erreur réseau, réessaie.";
-  }
-}
 
-/* --- Now playing polling --- */
-let pollTimer = null;
-function fmtTime(ms){
-  const s = Math.floor(ms/1000);
-  const m = Math.floor(s/60);
-  const rem = s%60;
-  return m+":"+String(rem).padStart(2,"0");
-}
-
-async function refreshNowPlaying(){
-  try{
-    const res = await apiFetch("/me/player/currently-playing");
-    if (res.status === 204){
-      document.getElementById("np-status").textContent = "Rien en lecture";
-      return;
+    // Mettre à jour le titre avec le carrousel automatique
+    function setTrackInfo(title, artist) {
+      const titleElem = document.getElementById('track-title');
+      document.getElementById('artist-name').textContent = artist;
+      titleElem.innerHTML = `${title} &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ${title}`;
     }
-    const data = await res.json();
-    if (!data || !data.item) return;
-    const item = data.item;
-    document.getElementById("np-title").textContent = item.name;
-    document.getElementById("np-artist").textContent = item.artists.map(a=>a.name).join(", ");
-    const art = item.album.images && item.album.images[0] ? item.album.images[0].url : "";
-    document.getElementById("np-art").style.backgroundImage = art ? `url(${art})` : "none";
-    const pct = data.progress_ms && item.duration_ms ? (data.progress_ms/item.duration_ms*100) : 0;
-    document.getElementById("np-fill").style.width = pct+"%";
-    document.getElementById("np-elapsed").textContent = fmtTime(data.progress_ms||0);
-    document.getElementById("np-duration").textContent = fmtTime(item.duration_ms||0);
-    document.getElementById("np-status").textContent = data.is_playing ? "Lecture en cours" : "En pause";
-    document.getElementById("play-icon").innerHTML = data.is_playing
-      ? '<path d="M7 5h4v14H7zm6 0h4v14h-4z"/>'
-      : '<path d="M8 5v14l11-7z"/>';
-  } catch(e){ /* silent */ }
-}
-function startPolling(){
-  refreshNowPlaying();
-  if (pollTimer) clearInterval(pollTimer);
-  pollTimer = setInterval(refreshNowPlaying, 3000);
-}
 
-/* --- Wheel controls --- */
-document.getElementById("btn-menu").addEventListener("click", ()=>{
-  if (pollTimer) clearInterval(pollTimer);
-  showView(viewMenu);
-  renderPlaylistScreen();
-});
-document.getElementById("btn-play").addEventListener("click", async ()=>{
-  const playing = document.getElementById("np-status").textContent === "Lecture en cours";
-  await apiFetch("/me/player/"+(playing?"pause":"play"), {method:"PUT"});
-  setTimeout(refreshNowPlaying, 400);
-});
-document.getElementById("btn-select").addEventListener("click", async ()=>{
-  const playing = document.getElementById("np-status").textContent === "Lecture en cours";
-  await apiFetch("/me/player/"+(playing?"pause":"play"), {method:"PUT"});
-  setTimeout(refreshNowPlaying, 400);
-});
-document.getElementById("btn-next").addEventListener("click", async ()=>{
-  await apiFetch("/me/player/next", {method:"POST"});
-  setTimeout(refreshNowPlaying, 500);
-});
-document.getElementById("btn-prev").addEventListener("click", async ()=>{
-  await apiFetch("/me/player/previous", {method:"POST"});
-  setTimeout(refreshNowPlaying, 500);
-});
-
-/* --- Clock in status bar --- */
-function tickClock(){
-  const d = new Date();
-  document.getElementById("clock").textContent =
-    String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
-}
-setInterval(tickClock, 1000*30);
-tickClock();
-
-/* =========================================================
-   Boot sequence
-   ========================================================= */
-(async function boot(){
-  const urlParams = new URLSearchParams(window.location.search);
-  const code = urlParams.get("code");
-  if (code){
-    renderConnectScreen();
-    document.getElementById("status-msg").textContent = "Connexion en cours...";
-    try{
-      await exchangeCodeForToken(code);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } catch(e){
-      document.getElementById("status-msg").textContent = "Échec de connexion, réessaie.";
-      return;
+    function handleControl(action) {
+      if (action === 'MENU') {
+        openSettings();
+      }
     }
-  }
-
-  if (!getAccessToken()){
-    renderConnectScreen();
-    return;
-  }
-
-  if (tokenExpired()){
-    const ok = await refreshAccessToken();
-    if (!ok){ renderConnectScreen(); return; }
-  }
-
-  renderPlaylistScreen();
-})();
-</script>
+  </script>
 </body>
 </html>
