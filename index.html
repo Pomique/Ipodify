@@ -119,10 +119,6 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 4px;}
   .np-artist{font-size:11px; color:var(--ink-soft); text-align:center; margin-top:1px;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-  .np-progress{
-    height:3px; background:rgba(0,0,0,.15); border-radius:2px; margin:10px 4px 2px; overflow:hidden;
-  }
-  .np-progress-fill{height:100%; width:0%; background:var(--ink); transition:width .3s linear;}
   .np-times{display:flex; justify-content:space-between; font-size:9px; color:var(--ink-soft); padding:0 4px;}
   .np-playlist{font-size:10px; color:var(--ink-soft); text-align:center; margin-top:auto; padding-top:6px;}
 
@@ -156,7 +152,21 @@
   }
   .center-btn:active{background:linear-gradient(160deg,#e5e4e1,#d7d6d3);}
 
-  .brand{text-align:center; margin-top:22px; font-size:11px; letter-spacing:1px; color:#7a7d82; font-weight:600;}
+  .np-progress{
+    height:14px; display:flex; align-items:center;
+    margin:10px 4px 2px; padding:0; cursor:pointer;
+  }
+  .np-progress-track{
+    height:3px; width:100%; background:rgba(0,0,0,.15); border-radius:2px; overflow:hidden;
+  }
+  .np-progress-fill{height:100%; width:0%; background:var(--ink);}
+
+  .menu-item{cursor:pointer;}
+  .menu-item.disabled{color:var(--ink-soft); cursor:default;}
+  .spotify-open-btn{
+    margin-top:auto; font-size:11.5px; font-weight:700; color:#fff;
+    background:var(--spotify); border:none; border-radius:6px; padding:8px;
+  }
 </style>
 </head>
 <body>
@@ -184,9 +194,12 @@
             <div class="np-art" id="np-art"></div>
             <div class="np-title" id="np-title">—</div>
             <div class="np-artist" id="np-artist">—</div>
-            <div class="np-progress"><div class="np-progress-fill" id="np-fill"></div></div>
+            <div class="np-progress" id="np-progress">
+              <div class="np-progress-track"><div class="np-progress-fill" id="np-fill"></div></div>
+            </div>
             <div class="np-times"><span id="np-elapsed">0:00</span><span id="np-duration">0:00</span></div>
             <div class="np-playlist" id="np-status">Connexion...</div>
+            <div class="np-playlist" id="np-open-spotify" style="text-decoration:underline;">Ouvrir Spotify</div>
           </div>
 
         </div>
@@ -210,7 +223,6 @@
       </div>
     </div>
 
-    <div class="brand">iPodify</div>
   </div>
 </div>
 
@@ -218,7 +230,7 @@
 /* =========================================================
    CONFIGURATION — à remplir avant de déployer
    ========================================================= */
-const CLIENT_ID = "c4babe4992884628b766f199b1569747";
+const CLIENT_ID = "COLLE_ICI_TON_CLIENT_ID_SPOTIFY";
 const REDIRECT_URI = window.location.origin + window.location.pathname;
 const SCOPES = [
   "user-read-playback-state",
@@ -359,14 +371,54 @@ function renderConnectScreen(){
   document.getElementById("connect-btn").addEventListener("click", startLogin);
 }
 
+/* --- Playlist memory (up to 6 saved playlists) --- */
+function loadPlaylists(){
+  try{ return JSON.parse(localStorage.getItem("ipodify_playlists")||"[]"); }catch(e){ return []; }
+}
+function savePlaylists(list){
+  localStorage.setItem("ipodify_playlists", JSON.stringify(list.slice(0,6)));
+}
+async function fetchPlaylistName(id){
+  try{
+    const res = await apiFetch("/playlists/"+id+"?fields=name");
+    if (res.ok){ const j = await res.json(); return j.name || "Playlist"; }
+  }catch(e){}
+  return "Playlist";
+}
+function rememberPlaylist(id, name){
+  let list = loadPlaylists().filter(p=>p.id!==id);
+  list.unshift({id, name});
+  savePlaylists(list);
+}
+
 function renderPlaylistScreen(){
+  const saved = loadPlaylists();
+  const itemsHtml = saved.map(p=>`
+    <div class="menu-item" data-id="${p.id}">
+      <span>${p.name}</span><small>▸</small>
+    </div>
+  `).join("");
   menuContent.innerHTML = `
-    <div class="hint">Colle le lien d'une playlist Spotify :</div>
-    <input class="url-input" id="playlist-url" placeholder="https://open.spotify.com/playlist/..." />
-    <button class="go-btn" id="go-btn">Lancer la lecture</button>
+    ${saved.length ? itemsHtml : '<div class="hint">Aucune playlist enregistrée pour le moment.</div>'}
+    <div class="menu-item" id="add-playlist-item"><span>+ Nouvelle playlist</span><small>▸</small></div>
+    <div id="add-form" style="display:none;">
+      <div class="hint">Colle le lien d'une playlist Spotify :</div>
+      <input class="url-input" id="playlist-url" placeholder="https://open.spotify.com/playlist/..." />
+      <button class="go-btn" id="go-btn">Lancer la lecture</button>
+    </div>
     <div class="status-msg" id="status-msg"></div>
+    <button class="spotify-open-btn" id="open-spotify-btn">Ouvrir l'appli Spotify</button>
   `;
+  saved.forEach(p=>{
+    menuContent.querySelector(`[data-id="${p.id}"]`).addEventListener("click", ()=>launchPlaylistById(p.id, p.name));
+  });
+  document.getElementById("add-playlist-item").addEventListener("click", ()=>{
+    document.getElementById("add-form").style.display = "block";
+  });
   document.getElementById("go-btn").addEventListener("click", onLaunchPlaylist);
+  document.getElementById("open-spotify-btn").addEventListener("click", ()=>{
+    window.location.href = "spotify://";
+  });
 }
 
 function extractPlaylistId(url){
@@ -375,20 +427,26 @@ function extractPlaylistId(url){
 }
 
 async function onLaunchPlaylist(){
-  const statusEl = document.getElementById("status-msg");
   const url = document.getElementById("playlist-url").value.trim();
   const id = extractPlaylistId(url);
   if (!id){
-    statusEl.textContent = "Lien de playlist invalide.";
+    document.getElementById("status-msg").textContent = "Lien de playlist invalide.";
     return;
   }
+  const name = await fetchPlaylistName(id);
+  rememberPlaylist(id, name);
+  launchPlaylistById(id, name);
+}
+
+async function launchPlaylistById(id, name){
+  const statusEl = document.getElementById("status-msg");
   statusEl.textContent = "Recherche d'un appareil actif...";
   try{
     const devicesRes = await apiFetch("/me/player/devices");
     const devicesJson = await devicesRes.json();
     const devices = devicesJson.devices || [];
     if (devices.length === 0){
-      statusEl.textContent = "Ouvre l'appli Spotify une fois sur ce téléphone, puis réessaie.";
+      statusEl.textContent = "Ouvre l'appli Spotify une fois sur ce téléphone (bouton ci-dessous), puis réessaie.";
       return;
     }
     const device = devices.find(d=>d.is_active) || devices[0];
@@ -397,7 +455,7 @@ async function onLaunchPlaylist(){
       body: JSON.stringify({ context_uri: "spotify:playlist:"+id })
     });
     if (playRes.status === 204 || playRes.ok){
-      localStorage.setItem("ipodify_last_playlist", id);
+      rememberPlaylist(id, name);
       showView(viewPlayer);
       startPolling();
     } else {
@@ -410,6 +468,7 @@ async function onLaunchPlaylist(){
 
 /* --- Now playing polling --- */
 let pollTimer = null;
+let currentDurationMs = 0;
 function fmtTime(ms){
   const s = Math.floor(ms/1000);
   const m = Math.floor(s/60);
@@ -431,6 +490,7 @@ async function refreshNowPlaying(){
     document.getElementById("np-artist").textContent = item.artists.map(a=>a.name).join(", ");
     const art = item.album.images && item.album.images[0] ? item.album.images[0].url : "";
     document.getElementById("np-art").style.backgroundImage = art ? `url(${art})` : "none";
+    currentDurationMs = item.duration_ms || 0;
     const pct = data.progress_ms && item.duration_ms ? (data.progress_ms/item.duration_ms*100) : 0;
     document.getElementById("np-fill").style.width = pct+"%";
     document.getElementById("np-elapsed").textContent = fmtTime(data.progress_ms||0);
@@ -470,6 +530,19 @@ document.getElementById("btn-next").addEventListener("click", async ()=>{
 document.getElementById("btn-prev").addEventListener("click", async ()=>{
   await apiFetch("/me/player/previous", {method:"POST"});
   setTimeout(refreshNowPlaying, 500);
+});
+document.getElementById("np-progress").addEventListener("click", async (e)=>{
+  if (!currentDurationMs) return;
+  const rect = e.currentTarget.getBoundingClientRect();
+  const ratio = Math.max(0, Math.min(1, (e.clientX-rect.left)/rect.width));
+  const pos = Math.floor(ratio*currentDurationMs);
+  document.getElementById("np-fill").style.width = (ratio*100)+"%";
+  await apiFetch("/me/player/seek?position_ms="+pos, {method:"PUT"});
+  setTimeout(refreshNowPlaying, 400);
+});
+
+document.getElementById("np-open-spotify").addEventListener("click", ()=>{
+  window.location.href = "spotify://";
 });
 
 /* --- Clock in status bar --- */
