@@ -110,6 +110,14 @@
     margin-top:auto; font-size:12.5px; font-weight:700; color:#fff;
     background:var(--spotify); border:none; border-radius:6px; padding:9px;
   }
+  .bottom-actions{
+    margin-top:auto; display:flex; justify-content:space-between; gap:8px; padding-top:10px;
+  }
+  .pill-btn{
+    border:none; border-radius:14px; font-size:10.5px; font-weight:700; padding:6px 12px;
+  }
+  .pill-spotify{background:var(--spotify); color:#000;}
+  .pill-reconnect{background:#000; color:#fff; text-decoration:underline;}
   .status-msg{font-size:11px; color:var(--ink-soft); text-align:center; margin-top:8px; min-height:14px;}
 
   /* --- Now playing view --- */
@@ -266,7 +274,8 @@
 /* =========================================================
    CONFIGURATION — à remplir avant de déployer
    ========================================================= */
-const CLIENT_ID = "c4babe4992884628b766f199b1569747";const REDIRECT_URI = window.location.origin + window.location.pathname;
+const CLIENT_ID = "COLLE_ICI_TON_CLIENT_ID_SPOTIFY";
+const REDIRECT_URI = window.location.origin + window.location.pathname;
 const SCOPES = [
   "streaming",
   "user-read-email",
@@ -467,7 +476,7 @@ function loadPlaylists(){
   try{ return JSON.parse(localStorage.getItem("ipodify_playlists")||"[]"); }catch(e){ return []; }
 }
 function savePlaylists(list){
-  localStorage.setItem("ipodify_playlists", JSON.stringify(list.slice(0,6)));
+  localStorage.setItem("ipodify_playlists", JSON.stringify(list.slice(0,8)));
 }
 async function fetchPlaylistName(id){
   try{
@@ -480,6 +489,24 @@ function rememberPlaylist(id, name){
   let list = loadPlaylists().filter(p=>p.id!==id);
   list.unshift({id, name});
   savePlaylists(list);
+}
+
+async function autoImportPlaylists(){
+  try{
+    const res = await apiFetch("/me/playlists?limit=8");
+    if (!res.ok) return;
+    const json = await res.json();
+    const items = (json.items || []).filter(Boolean);
+    if (!items.length) return;
+    let list = loadPlaylists();
+    items.forEach(pl=>{
+      if (!list.find(p=>p.id===pl.id)){
+        list.push({id: pl.id, name: pl.name});
+      }
+    });
+    savePlaylists(list);
+    if (viewMenu.classList.contains("active")) renderPlaylistScreen();
+  } catch(e){ /* silent */ }
 }
 
 function renderPlaylistScreen(){
@@ -498,8 +525,10 @@ function renderPlaylistScreen(){
       <button class="go-btn" id="go-btn">Lancer la lecture</button>
     </div>
     <div class="status-msg" id="status-msg"></div>
-    <button class="spotify-open-btn" id="open-spotify-btn">Ouvrir l'appli Spotify</button>
-    <div class="hint" id="reconnect-link" style="text-align:center; text-decoration:underline; margin-top:6px; cursor:pointer;">Se reconnecter à Spotify</div>
+    <div class="bottom-actions">
+      <button class="pill-btn pill-spotify" id="open-spotify-btn">Spotify</button>
+      <button class="pill-btn pill-reconnect" id="reconnect-link">Se reconnecter à Spotify</button>
+    </div>
   `;
   document.getElementById("reconnect-link").addEventListener("click", ()=>{
     localStorage.removeItem("ipodify_access");
@@ -813,6 +842,7 @@ tickClock();
 
   renderPlaylistScreen();
   initWebPlayer();
+  autoImportPlaylists();
 })();
 </script>
 </body>
